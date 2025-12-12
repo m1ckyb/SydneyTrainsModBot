@@ -1,0 +1,6 @@
+praw
+psycopg2-binary
+python-dotenv
+flask
+PyYAML
+gunicorn

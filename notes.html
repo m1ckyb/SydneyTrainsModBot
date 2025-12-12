@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Notes - SydneyTrains Mod Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .notes-container { padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-body-tertiary">
+    <div class="container">
+        <div class="notes-container bg-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>📝 User Notes</h1>
+                <div>
+                    <button id="themeToggle" class="btn btn-outline-light btn-sm me-2">☀️ Light Mode</button>
+                    <span class="me-2">Logged in as <strong>u/{{ user }}</strong></span>
+                    <a href="/" class="btn btn-outline-secondary btn-sm">Back to Logs</a>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Add / Edit Note</div>
+                <div class="card-body">
+                    <form action="/notes" method="POST" class="row g-3">
+                        <input type="hidden" name="action" value="save">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" name="username" id="usernameInput" placeholder="Username (without u/)" required>
+                        </div>
+                        <div class="col-md-7">
+                            <input type="text" class="form-control" name="note" id="noteInput" placeholder="Note content..." required>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Save Note</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User</th>
+                        <th>Note</th>
+                        <th>Last Updated</th>
+                        <th>By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notes %}
+                    <tr>
+                        <td><a href="https://reddit.com/u/{{ note.username }}" target="_blank">u/{{ note.username }}</a></td>
+                        <td>{{ note.note }}</td>
+                        <td>{{ note.time }}</td>
+                        <td>u/{{ note.moderator }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editNote('{{ note.username }}', '{{ note.note | replace("'", "\\'") }}')">Edit</button>
+                            <form action="/notes" method="POST" class="d-inline" onsubmit="return confirm('Delete note for u/{{ note.username }}?');">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="username" value="{{ note.username }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not notes %}
+                <p class="text-center text-muted">No notes found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Theme Logic
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-bs-theme', savedTheme);
+        toggle.textContent = savedTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        toggle.className = savedTheme === 'dark' ? 'btn btn-outline-light btn-sm me-2' : 'btn btn-outline-dark btn-sm me-2';
+        toggle.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            toggle.textContent = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            toggle.className = newTheme === 'dark' ? 'btn btn-outline-light btn-sm me-2' : 'btn btn-outline-dark btn-sm me-2';
+        });
+
+        function editNote(username, note) {
+            document.getElementById('usernameInput').value = username;
+            document.getElementById('noteInput').value = note;
+            document.getElementById('noteInput').focus();
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

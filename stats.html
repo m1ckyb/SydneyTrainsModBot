@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mod Stats - SydneyTrains Mod Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { padding: 20px; }
+        .stats-container { padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .chart-wrapper { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body class="bg-body-tertiary">
+    <div class="container">
+        <div class="stats-container bg-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>📊 Moderation Statistics</h1>
+                <div>
+                    <button id="themeToggle" class="btn btn-outline-light btn-sm me-2">☀️ Light Mode</button>
+                    <span class="me-2">Logged in as <strong>u/{{ user }}</strong></span>
+                    <a href="/" class="btn btn-outline-secondary btn-sm">Back to Logs</a>
+                </div>
+            </div>
+
+            <form action="/stats" method="GET" class="row g-3 mb-4 align-items-end">
+                <div class="col-auto">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" required>
+                </div>
+                <div class="col-auto">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    {% if start_date %}<a href="/stats" class="btn btn-secondary">Clear</a>{% endif %}
+                </div>
+            </form>
+
+            <div class="row mt-4">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">Action Distribution</div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="typeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">Activity (Last 30 Days)</div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="timeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">Top Offenders</div>
+                        <div class="card-body">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>User</th>
+                                        <th>Removals/Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user, count in top_offenders %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><a href="https://reddit.com/u/{{ user }}" target="_blank">u/{{ user }}</a></td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not top_offenders %}
+                                    <tr><td colspan="3" class="text-center text-muted">No data available</td></tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data from Flask
+        const typeLabels = {{ type_labels | tojson }};
+        const typeValues = {{ type_values | tojson }};
+        const timeLabels = {{ time_labels | tojson }};
+        const timeValues = {{ time_values | tojson }};
+
+        // Charts
+        const ctxType = document.getElementById('typeChart').getContext('2d');
+        new Chart(ctxType, {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeValues,
+                    backgroundColor: ['#dc3545', '#ffc107', '#0d6efd', '#198754', '#6610f2', '#fd7e14'],
+                    borderWidth: 1
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+        const ctxTime = document.getElementById('timeChart').getContext('2d');
+        new Chart(ctxTime, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Actions per Day',
+                    data: timeValues,
+                    borderColor: '#0d6efd',
+                    tension: 0.1,
+                    fill: true,
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)'
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Theme Toggle
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-bs-theme', savedTheme);
+        toggle.textContent = savedTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        toggle.className = savedTheme === 'dark' ? 'btn btn-outline-light btn-sm me-2' : 'btn btn-outline-dark btn-sm me-2';
+
+        toggle.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            toggle.textContent = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            toggle.className = newTheme === 'dark' ? 'btn btn-outline-light btn-sm me-2' : 'btn btn-outline-dark btn-sm me-2';
+        });
+    </script>
+</body>
+</html>

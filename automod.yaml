@@ -1,0 +1,70 @@
+---
+# Rule 2: Disguised Links
+- name: "Disguised Links"
+  triggers:
+    body (regex): '(\[(?P<text>(http|www)\S+)\]\((?!(?P=text))(http|www)\S+\))'
+  action: remove
+  modmail: "The above {{kind}} by /u/{{author}} was removed because it contained a disguised link. Please investigate and advise immediately."
+
+# Rule 3: URL Shorteners
+- name: "URL Shorteners"
+  triggers:
+    domain: [bit.ly, goo.gl, tinyurl.com, ow.ly, is.gd, buff.ly, t.co]
+  action: remove
+  message: |
+    Your {{kind}} was removed because you used a URL shortener ({{match}}).
+    
+    Please repost using the full, original link so users know where they are clicking.
+
+# Rule 4: Mobile Links
+- name: "Mobile Links"
+  triggers:
+    domain (starts-with): [m., mobile.]
+  action: remove
+  comment: |
+    Your submission was automatically removed because you linked to the mobile version of a website. 
+    
+    Please submit a non-mobile link instead. On mobile devices, this should automatically redirect to the mobile site.
+    Thank You!
+
+# Rule 5: Banned Domains
+- name: "Banned Domains"
+  triggers:
+    domain+body+title: [twitter.com, x.com, team3thirty.com, d33doz.com.au, tripappy.co]
+  action: remove
+  message: "Your {{kind}} was removed because we don't allow links to {{match}}."
+
+# Rule 6: Spam Filter
+- name: "Spam Filter"
+  triggers:
+    title+body (regex): 
+      - 'qt-shirt\.com'
+      - 'my-teespring\.com'
+      - 'buy (it )?here\W*->'
+      - 'grab yours here'
+      - '(crypto|bit)coin'
+  action: spam
+  allow_approval: false
+
+# Rule 10: Profanity Filter
+- name: "Profanity Filter"
+  triggers:
+    title+body (regex):
+      - '((bul+|dip|horse|jack).?)?sh(\?\*|[ai]|(?!(eets?|iites?)\b)[ei]{2,})(\?\*|t)e?(bag|dick|head|load|lord|post|stain|ter|ting|ty)?s?'
+      - '((dumb|jack|smart|wise).?)?a(rse|ss)(.?(clown|fuck|hat|hole|munch|sex|tard|tastic|wipe))?(e?s)?'
+      - '(?!(?-i:Cockburns?\b))cock(?!amamie|apoo|atiel|atoo|ed\b|er\b|erels?\b|eyed|iness|les|ney|pit|rell|roach|sure|tail|ups?\b|y\b)\w[\w-]*'
+      - '(?#ES)(cabr[oó]n(e?s)?|chinga\W?(te)?|g[uü]ey|mierda|no mames|pendejos?|pinche|put[ao]s?)'
+      - '(?<!\b(moby|tom,) )(?!(?-i:Dick [A-Z][a-z]+\b))dick(?!\W?(and jane|cavett|cheney|dastardly|grayson|s?\W? sporting good|tracy))s?'
+      - '(cock|dick|penis|prick)\W?(bag|head|hole|ish|less|suck|wad|weed|wheel)\w*'
+      - '(f(?!g\b|gts\b)|ph)[\x40a]?h?g(?!\W(and a pint|ash|break|butt|end|packet|paper|smok\w*)s?\b)g?h?([0aeiou]?tt?)?(ed|in[\Wg]?|r?y)?s?'
+      - '(m[oua]th(a|er).?)?f(?!uch|uku)(\?\*|u|oo)+(\?\*|[ckq])+\w*'
+      - '[ck]um(?!.laude)(.?shot)?(m?ing|s)?'
+      - 'b(\?\*|i)(\?\*|[ao])?(\?\*|t)(\?\*|c)(\?\*|h)(e[ds]|ing|y)?'
+      - 'c+u+n+t+([sy]|ing)?'
+      - 'cock(?!-ups?\b|\W(a\Whoop|a\Wsnook|and\Wbull|eyed|in\Wthe\Whenhouse|of\Wthe\W(rock|roost|walk))\b)s?'
+      - 'd[o0]+u[cs]he?\W?(bag|n[0o]zzle|y)s?'
+      - 'piss(ed(?! off)(?<!\bi(\sa|\W?)m pissed)|er?s|ing)?'
+      - 'pricks?'
+      - 'tit(t(ie|y))?s?'
+  action: filter
+  modmail_subject: "Profanity Filter Triggered"

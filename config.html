@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Configuration - SydneyTrains Mod Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+    <style>
+        body { padding: 20px; }
+        .container { max-width: 900px; }
+        .editor-container { padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* CodeMirror Customization */
+        .CodeMirror { height: 600px; border: 1px solid #dee2e6; border-radius: 0.375rem; font-size: 14px; }
+    </style>
+</head>
+<body class="bg-body-tertiary">
+    <div class="container">
+        <div class="editor-container bg-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>⚙️ Edit Configuration</h1>
+                <div>
+                    {% if backup_exists %}
+                    <form action="/restore_config?file={{ current_file }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to restore the backup? Current changes will be lost.');">
+                        <button type="submit" class="btn btn-warning btn-sm me-2">Restore Backup</button>
+                    </form>
+                    {% endif %}
+                    <button id="themeToggle" class="btn btn-outline-light btn-sm me-2">☀️ Light Mode</button>
+                    <span class="me-2">Logged in as <strong>u/{{ user }}</strong></span>
+                    <a href="/" class="btn btn-outline-secondary btn-sm">Back to Logs</a>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if current_file == 'automod' %}active{% endif %}" href="/config?file=automod">AutoMod Rules</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if current_file == 'tiers' %}active{% endif %}" href="/config?file=tiers">Karma Tiers</a>
+                </li>
+            </ul>
+
+            <form method="POST">
+                <div class="mb-3">
+                    <textarea name="content" class="form-control" spellcheck="false">{{ content }}</textarea>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.querySelector('textarea[name="content"]'), {
+            mode: 'yaml',
+            lineNumbers: true,
+            theme: 'material-darker' // Default theme
+        });
+        document.querySelector('form').addEventListener('submit', function() {
+            editor.save();
+        });
+
+        // Theme Toggle Logic
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-bs-theme', savedTheme);
+        updateButton(savedTheme);
+
+        toggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateButton(newTheme);
+        });
+
+        function updateButton(theme) {
+            toggle.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            toggle.className = theme === 'dark' ? 'btn btn-outline-light btn-sm me-2' : 'btn btn-outline-dark btn-sm me-2';
+            editor.setOption('theme', theme === 'dark' ? 'material-darker' : 'default');
+        }
+    </script>
+</body>
+</html>

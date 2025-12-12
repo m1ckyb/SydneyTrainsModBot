@@ -1,0 +1,47 @@
+services:
+  bot:
+    build: .
+    depends_on:
+      - db
+    environment:
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+      - REDDIT_USERNAME=${REDDIT_USERNAME}
+      - REDDIT_PASSWORD=${REDDIT_PASSWORD}
+      - REDDIT_USER_AGENT=${REDDIT_USER_AGENT}
+      - SUBREDDIT_NAME=${SUBREDDIT_NAME}
+      - TEST_MODE=${TEST_MODE:-false}
+      - DB_HOST=db
+      - DB_NAME=sydneytrains
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+    restart: unless-stopped
+
+  web:
+    build: .
+    command: python web.py
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=sydneytrains
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - REDDIT_REDIRECT_URI=http://localhost:5000/callback
+      - FLASK_SECRET_KEY=change_this_to_a_random_string
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=sydneytrains
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

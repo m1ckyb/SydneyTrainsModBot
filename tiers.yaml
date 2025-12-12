@@ -1,0 +1,9 @@
+# Karma Tiers Configuration
+# Format: - { max_karma: number, limit: number }
+# Use .inf for infinity (501+ karma)
+- max_karma: 250
+  limit: 1
+- max_karma: 500
+  limit: 2
+- max_karma: .inf
+  limit: 4

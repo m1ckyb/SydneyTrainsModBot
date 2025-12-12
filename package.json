@@ -1,0 +1,16 @@
+{
+  "name": "sydney-trains-mod-bot",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "devvit play",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@devvit/public-api": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

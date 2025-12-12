@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SydneyTrains Mod Log</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .table-container { padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 0; }
+    </style>
+</head>
+<body class="bg-body-tertiary">
+    <div class="container">
+        <div class="table-container bg-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>🛡️ Mod Action Log</h1>
+                <button id="themeToggle" class="btn btn-outline-light btn-sm">☀️ Light Mode</button>
+            </div>
+            
+            {% if test_mode %}
+            <div class="alert alert-info border-info">
+                <strong>🚧 Test Mode Enabled</strong>: Actions are being simulated and logged, but not executed on Reddit.
+            </div>
+            {% endif %}
+            
+            {% if not user %}
+                <div class="alert alert-warning text-center">
+                    <p>This area is restricted to moderators of r/SydneyTrains.</p>
+                    <a href="/login" class="btn btn-primary">Login with Reddit</a>
+                </div>
+            {% else %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="mb-0">Logged in as <strong>u/{{ user }}</strong></p>
+                    <div>
+                        <a href="/config?file=automod" class="btn btn-outline-primary btn-sm me-2">Edit Config</a>
+                        <a href="/modqueue" class="btn btn-outline-warning btn-sm me-2">Mod Queue</a>
+                        <a href="/modmail" class="btn btn-outline-success btn-sm me-2">Modmail</a>
+                        <a href="/notes" class="btn btn-outline-secondary btn-sm me-2">User Notes</a>
+                        <a href="/stats" class="btn btn-outline-info btn-sm me-2">View Stats</a>
+                        <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                    </div>
+                </div>
+
+            <div class="card mb-3 border-secondary">
+                <div class="card-body py-2 d-flex align-items-center bg-body-secondary overflow-hidden">
+                    <strong class="me-3 text-nowrap">⚡ Live Feed:</strong>
+                    <div id="ticker" class="d-flex" style="white-space: nowrap; overflow-x: auto; scrollbar-width: none;">
+                        <span class="text-muted">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <form action="/" method="GET" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search by username or action type..." value="{{ search }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    <a href="{{ url_for('export_csv', search=search) }}" class="btn btn-success">Export CSV</a>
+                    {% if search %}
+                        <a href="/" class="btn btn-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Time</th>
+                        <th>Action</th>
+                        <th>User</th>
+                        <th>Details</th>
+                        {% if user %}
+                        <th>Mod Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for action in actions %}
+                    <tr>
+                        <td>{{ action.time }}</td>
+                        <td><span class="badge {% if 'TEST' in action.type %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ action.type }}</span></td>
+                        <td><a href="https://reddit.com/u/{{ action.user }}" target="_blank">u/{{ action.user }}</a></td>
+                        <td>{{ action.details }}</td>
+                        {% if user %}
+                        <td>
+                            {% if action.submission_id %}
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="/approve/{{ action.submission_id }}" class="btn btn-success">Approve</a>
+                                <a href="/remove/{{ action.submission_id }}" class="btn btn-outline-danger">Remove</a>
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not actions %}
+                <p class="text-center text-muted">No actions recorded yet.</p>
+            {% endif %}
+
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=page-1, search=search) }}">Previous</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Page {{ page }} of {{ total_pages }}</span>
+                    </li>
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=page+1, search=search) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-bs-theme', savedTheme);
+        updateButton(savedTheme);
+
+        toggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateButton(newTheme);
+        });
+
+        function updateButton(theme) {
+            toggle.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            toggle.className = theme === 'dark' ? 'btn btn-outline-light btn-sm' : 'btn btn-outline-dark btn-sm';
+        }
+
+        // Ticker Logic
+        function updateTicker() {
+            const ticker = document.getElementById('ticker');
+            if (!ticker) return;
+            
+            fetch('/api/recent_actions')
+                .then(response => {
+                    if (response.status === 401) return null;
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data) return;
+                    
+                    let html = '';
+                    data.forEach(action => {
+                        const badgeClass = action.type.includes('TEST') ? 'bg-warning text-dark' : 'bg-danger';
+                        html += `
+                            <div class="d-inline-block me-4">
+                                <small class="text-muted">[${action.time}]</small>
+                                <span class="badge ${badgeClass} me-1">${action.type}</span>
+                                <span class="fw-bold">u/${action.user}</span>
+                            </div>
+                        `;
+                    });
+                    ticker.innerHTML = html;
+                })
+                .catch(err => console.error('Ticker error:', err));
+        }
+
+        if (document.getElementById('ticker')) {
+            updateTicker();
+            setInterval(updateTicker, 5000); // Refresh every 5s
+        }
+    </script>
+</body>
+</html>
